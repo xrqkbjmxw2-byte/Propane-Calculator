@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Propane Top‑Up Calculator</title>
+  <meta name="theme-color" content="#0ea5e9" />
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root{--bg:#0b1020;--card:#121a2d;--muted:#8aa0b6;--accent:#0ea5e9;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--text:#e6eef6}
+    *{box-sizing:border-box} body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#091225,#04070f);color:var(--text)}
+    .wrap{max-width:680px;margin:0 auto;padding:20px}
+    h1{font-size:1.25rem;letter-spacing:.2px;margin:6px 0 14px}
+    .card{background:radial-gradient(1200px 400px at 50% -200px,rgba(14,165,233,.15),transparent 60%),var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:18px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:560px){.grid{grid-template-columns:1fr}}
+    label{font-size:.85rem;color:var(--muted)}
+    input{width:100%;margin-top:6px;background:#0c1426;color:var(--text);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 12px;font-size:1rem;outline:none}
+    input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(14,165,233,.15)}
+    .row{display:flex;gap:12px;align-items:center}
+    .unit{color:var(--muted);font-size:.9rem}
+    .section-title{margin:14px 2px 8px;font-weight:700;font-size:.95rem;color:#bcd0e3}
+    .outputs{display:grid;gap:10px;margin-top:8px}
+    .out{display:flex;justify-content:space-between;align-items:center;background:#0c1426;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px}
+    .out .label{color:var(--muted);font-size:.9rem}
+    .out .value{font-variant-numeric:tabular-nums slashed-zero;font-size:1.05rem}
+    .pill{padding:4px 10px;border-radius:999px;font-size:.8rem;font-weight:700;letter-spacing:.2px}
+    .pill.ok{background:rgba(22,163,74,.15);color:#86efac;border:1px solid rgba(22,163,74,.35)}
+    .pill.ok2{background:rgba(22,163,74,.10);color:#bbf7d0;border:1px dashed rgba(22,163,74,.35)}
+    .pill.warn{background:rgba(245,158,11,.15);color:#fde68a;border:1px solid rgba(245,158,11,.35)}
+    .pill.bad2{background:rgba(220,38,38,.10);color:#fecaca;border:1px dashed rgba(220,38,38,.35)}
+    .pill.bad{background:rgba(220,38,38,.15);color:#fecaca;border:1px solid rgba(220,38,38,.35)}
+    .foot{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;align-items:center;justify-content:space-between;color:var(--muted);font-size:.85rem}
+    button{background:var(--accent);color:white;border:none;border-radius:12px;padding:12px 14px;font-weight:700}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Propane Top‑Up Calculator</h1>
+    <div class="card">
+      <div class="section-title">Inputs</div>
+      <div class="grid">
+        <div>
+          <label>Tank capacity (gallons)
+            <input id="cap" type="number" min="1" step="1" value="200" />
+          </label>
+        </div>
+        <div>
+          <label>Company max fill %
+            <input id="maxPct" type="number" min="0" max="100" step="0.1" value="75" />
+          </label>
+        </div>
+        <div>
+          <label>Gauge reading % (now)
+            <input id="gaugePct" type="number" min="0" max="100" step="0.1" value="40" />
+          </label>
+        </div>
+        <div>
+          <label>Price per gallon ($)
+            <input id="ppg" type="number" min="0" step="0.01" value="2.49" />
+          </label>
+        </div>
+      </div>
+
+      <div class="section-title">Fees & Taxes</div>
+      <div class="grid">
+        <div>
+          <label>Fuel Recovery Fee (untaxed)
+            <input id="feeFuel" type="number" min="0" step="0.01" value="8.99" />
+          </label>
+        </div>
+        <div>
+          <label>Hazmat Delivery Charge (untaxed)
+            <input id="feeHaz" type="number" min="0" step="0.01" value="9.98" />
+          </label>
+        </div>
+        <div>
+          <label>Alabama State Sales Tax % (on fuel only)
+            <input id="taxState" type="number" min="0" max="100" step="0.01" value="4" />
+          </label>
+        </div>
+        <div>
+          <label>Walker County Sales Tax % (on fuel only)
+            <input id="taxCounty" type="number" min="0" max="100" step="0.01" value="2" />
+          </label>
+        </div>
+      </div>
+
+      <div class="section-title">Results</div>
+      <div class="outputs">
+        <div class="out"><span class="label">Propane remaining</span><span><span id="remainVal" class="value">—</span> <span class="unit">gal</span> <span id="remainPill" class="pill warn">—</span></span></div>
+        <div class="out"><span class="label">Target at max fill</span><span><span id="targetVal" class="value">—</span> <span class="unit">gal</span></span></div>
+        <div class="out"><span class="label">Gallons needed to reach max fill</span><span><span id="needVal" class="value">—</span> <span class="unit">gal</span></span></div>
+        <div class="out"><span class="label">Fuel subtotal (gallons × $/gal)</span><span><span id="fuelSub" class="value">—</span></span></div>
+        <div class="out"><span class="label">State tax</span><span><span id="taxStateVal" class="value">—</span></span></div>
+        <div class="out"><span class="label">County tax</span><span><span id="taxCountyVal" class="value">—</span></span></div>
+        <div class="out"><span class="label">Untaxed fees total</span><span><span id="feesTotal" class="value">—</span></span></div>
+        <div class="out"><span class="label"><strong>Estimated total due</strong></span><span><strong id="grandTotal" class="value">—</strong></span></div>
+      </div>
+
+      <div class="foot">
+        <div class="muted">Color key (remaining vs capacity): <span class="pill bad">≤35%</span> <span class="pill bad2">36–48%</span> <span class="pill warn">49–61%</span> <span class="pill ok2">62–74%</span> <span class="pill ok">≥75%</span></div>
+        <div class="row">
+          <button id="saveBtn" title="Save inputs on this device">Save</button>
+          <button id="resetBtn" title="Reset to defaults">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id)=>document.getElementById(id);
+    const fmtNum = (n, d=2)=> Number.isFinite(n) ? n.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}) : '—';
+    const fmtMoney = (n)=> Number.isFinite(n) ? n.toLocaleString(undefined,{style:'currency',currency:'USD'}) : '—';
+
+    const ids = ["cap","maxPct","gaugePct","ppg","feeFuel","feeHaz","taxState","taxCounty"];
+
+    function load(){
+      const saved = JSON.parse(localStorage.getItem('propaneCalc')||'{}');
+      ids.forEach(id=>{ if(saved[id]!==undefined){ $(id).value = saved[id]; } });
+      calc();
+    }
+
+    function save(){
+      const data={};
+      ids.forEach(id=> data[id] = $(id).value);
+      localStorage.setItem('propaneCalc', JSON.stringify(data));
+    }
+
+    function reset(){
+      const defaults={cap:200,maxPct:75,gaugePct:40,ppg:2.49,feeFuel:8.99,feeHaz:9.98,taxState:4,taxCounty:2};
+      ids.forEach(id=> $(id).value = defaults[id]);
+      save();
+      calc();
+    }
+
+    function clamp(v,min,max){return Math.min(max, Math.max(min, v));}
+
+    function calc(){
+      const cap = Math.max(0, +$("cap").value || 0);
+      const maxPct = clamp(+$("maxPct").value || 0, 0, 100)/100;
+      const gaugePct = clamp(+$("gaugePct").value || 0, 0, 100)/100;
+      const ppg = Math.max(0, +$("ppg").value || 0);
+      const feeFuel = Math.max(0, +$("feeFuel").value || 0);
+      const feeHaz = Math.max(0, +$("feeHaz").value || 0);
+      const taxState = clamp(+$("taxState").value || 0, 0, 100)/100;
+      const taxCounty = clamp(+$("taxCounty").value || 0, 0, 100)/100;
+
+      const remaining = cap * gaugePct;
+      const target = cap * maxPct;
+      const needed = Math.max(0, target - remaining);
+      const fuelSubtotal = needed * ppg;
+      const stateTax = fuelSubtotal * taxState;
+      const countyTax = fuelSubtotal * taxCounty;
+      const feesTotal = feeFuel + feeHaz;
+      const grand = fuelSubtotal + stateTax + countyTax + feesTotal;
+
+      $("remainVal").textContent = fmtNum(remaining);
+      $("targetVal").textContent = fmtNum(target);
+      $("needVal").textContent = fmtNum(needed);
+      $("fuelSub").textContent = fmtMoney(fuelSubtotal);
+      $("taxStateVal").textContent = fmtMoney(stateTax);
+      $("taxCountyVal").textContent = fmtMoney(countyTax);
+      $("feesTotal").textContent = fmtMoney(feesTotal);
+      $("grandTotal").textContent = fmtMoney(grand);
+
+      const ratio = cap>0 ? remaining/cap : 0;
+      const pill = $("remainPill");
+      pill.textContent = Math.round(ratio*100) + "%";
+      pill.classList.remove('ok','ok2','warn','bad','bad2');
+      if(ratio <= 0.35) { pill.classList.add('bad'); }
+      else if(ratio <= 0.48) { pill.classList.add('bad2'); }
+      else if(ratio <= 0.61) { pill.classList.add('warn'); }
+      else if(ratio < 0.75) { pill.classList.add('ok2'); }
+      else { pill.classList.add('ok'); }
+    }
+
+    ids.forEach(id=> $(id).addEventListener('input', calc));
+    $("saveBtn").addEventListener('click', ()=>{ save(); calc(); });
+    $("resetBtn").addEventListener('click', reset);
+
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');
+    load();
+  </script>
+</body>
+</html>
